@@ -8,11 +8,12 @@ import {
   calcRealQuoteDebt,
   calcShortLeverage,
   calcShortLiquidationPriceX96,
-  FP96_ONE,
   MarginlyCoeffs,
   mulFP96,
 } from "./marginlyPoolMath";
+import { FP96_ONE } from "./consts";
 
+/** Enum with position type in Marginly */
 export enum PositionType {
   Uninitialized,
   Lend,
@@ -20,21 +21,24 @@ export enum PositionType {
   Long,
 }
 
+/** Marginly pool position */
 export class MarginlyPosition {
-  type: PositionType;
-  heapPosition: BigNumber;
-  baseAmount: BigNumber;
-  quoteAmount: BigNumber;
+  /** @field position type */
+  public type: PositionType
+
+  /** @field absolute value of position base tokens amount */
+  public baseAmount: BigNumber;
+
+  /** @field absolute value of position quote tokens amount */
+  public quoteAmount: BigNumber;
 
   constructor(
     coeffs: MarginlyCoeffs,
     type: PositionType,
-    heapPosition: BigNumber,
     discountedBaseAmount: BigNumber,
     discountedQuoteAmount: BigNumber
   ) {
     this.type = type;
-    this.heapPosition = heapPosition;
     if (type == PositionType.Lend) {
       this.baseAmount = mulFP96(
         coeffs.baseCollateralCoeff,
@@ -72,6 +76,10 @@ export class MarginlyPosition {
     }
   }
 
+  /** 
+   * @param basePriceX96 base to quote price in X96 to calculate leverage with
+   * @returns position leverage (undefined if position is `Uninitialized`)
+   */
   public calcLeverage(basePriceX96: BigNumber): BigNumber | undefined {
     if (this.type == PositionType.Long) {
       return calcLongLeverage(this.baseAmount, this.quoteAmount, basePriceX96);
@@ -84,6 +92,10 @@ export class MarginlyPosition {
     }
   }
 
+  /** 
+   * @param maxLeverage critical leverage
+   * @returns position liquidation price (undefined if position is `Uninitialized` or `Lend`)
+   */
   public calcLiquidationPrice(maxLeverage: BigNumber): BigNumber | undefined {
     if (this.type == PositionType.Long) {
       return calcLongLiquidationPriceX96(
@@ -102,6 +114,9 @@ export class MarginlyPosition {
     }
   }
 
+  /** 
+   * @returns available for withdrawal amount of base tokens
+   */
   public baseWithdrawAvailable(
     basePriceX96: BigNumber,
     maxLeverage: BigNumber
@@ -121,6 +136,9 @@ export class MarginlyPosition {
     }
   }
 
+   /** 
+   * @returns available for withdrawal amount of quote tokens
+   */
   public quoteWithdrawAvailable(
     basePriceX96: BigNumber,
     maxLeverage: BigNumber
