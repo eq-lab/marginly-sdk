@@ -2,6 +2,15 @@ import { BigNumber } from "ethers";
 
 export const FP96_ONE = BigNumber.from(1n << 96n);
 
+export interface MarginlyCoeffs {
+  baseCollateralCoeff: BigNumber;
+  quoteCollateralCoeff: BigNumber;
+  baseDelevCoeff: BigNumber;
+  quoteDelevCoeff: BigNumber;
+  baseDebtCoeff: BigNumber;
+  quoteDebtCoeff: BigNumber;
+}
+
 export function mulFP96(
   multiplier: BigNumber,
   multiplicand: BigNumber
@@ -109,5 +118,3 @@ export function convertPriceHumanToX96(
   const power = baseDecimal.sub(quoteDecimal);
   return price.mul(FP96_ONE).mul(BigNumber.from(10).pow(power));
 }
-
-
