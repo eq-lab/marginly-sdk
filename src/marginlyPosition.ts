@@ -42,7 +42,7 @@ export class MarginlyPosition {
     if (type == PositionType.Lend) {
       this.baseAmount = mulFP96(coeffs.baseCollateralCoeff, discountedBaseAmount);
       this.quoteAmount = mulFP96(coeffs.quoteCollateralCoeff, discountedQuoteAmount);
-    } else if (type == PositionType.Short) {
+    } else if (type == PositionType.Long) {
       this.baseAmount = calcRealBaseCollateral(
         coeffs.baseCollateralCoeff,
         coeffs.baseDelevCoeff,
@@ -50,7 +50,7 @@ export class MarginlyPosition {
         discountedQuoteAmount
       );
       this.quoteAmount = calcRealQuoteDebt(coeffs.quoteDebtCoeff, discountedQuoteAmount);
-    } else if (type == PositionType.Long) {
+    } else if (type == PositionType.Short) {
       this.baseAmount = calcRealBaseDebt(coeffs.baseDebtCoeff, discountedBaseAmount);
       this.quoteAmount = calcRealQuoteCollateral(
         coeffs.quoteCollateralCoeff,
