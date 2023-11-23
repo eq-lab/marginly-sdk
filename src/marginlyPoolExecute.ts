@@ -1,7 +1,7 @@
 /** @module MarginlyPoolExecute generates `execute` parameters for desired actions */
 
-import { BigNumber, ethers } from "ethers";
-import { EXECUTE_METHOD, SWAP_CALLDATA_DEFAULT, ZERO } from "./consts";
+import { BigNumber, ethers } from 'ethers';
+import { EXECUTE_METHOD, SWAP_CALLDATA_DEFAULT, ZERO } from './consts';
 
 /**
  * Enum with all calls performed via Marginly `execute` method
@@ -20,7 +20,7 @@ export enum CallType {
 }
 
 /**
- * Type of parameter for Marginly `execute` method. 
+ * Type of parameter for Marginly `execute` method.
  * @param CallType - type of {@link CallType | Call}.
  * @param BigNumber - `amount1`
  * @param BigNumber - `amount2`
@@ -29,15 +29,7 @@ export enum CallType {
  * @param string - `receivePositionAddress`
  * @param BigNumber - `swapCalldata`
  */
-export type ExecuteArgs = [
-  CallType,
-  BigNumber,
-  BigNumber,
-  BigNumber,
-  boolean,
-  string,
-  BigNumber
-];
+export type ExecuteArgs = [CallType, BigNumber, BigNumber, BigNumber, boolean, string, BigNumber];
 
 export interface ExecuteParams {
   methodName: string;
@@ -53,10 +45,7 @@ export abstract class MarginlyPoolExecute {
    * @param isNativeEth - if deposited token is native eth so it can be wrapped in process (false if undefined)
    * @returns method and parameters for Marginly `deposit base` call
    */
-  public static depositBase(
-    depositAmount: BigNumber,
-    isNativeEth: boolean | undefined
-  ): ExecuteParams {
+  public static depositBase(depositAmount: BigNumber, isNativeEth: boolean | undefined): ExecuteParams {
     return {
       methodName: EXECUTE_METHOD,
       args: [
@@ -77,10 +66,7 @@ export abstract class MarginlyPoolExecute {
    * @param isNativeEth - if deposited token is native eth so it can be wrapped in process (false if undefined)
    * @returns method and parameters for Marginly `deposit quote` call
    */
-  public static depositQuote(
-    depositAmount: BigNumber,
-    isNativeEth: boolean | undefined
-  ): ExecuteParams {
+  public static depositQuote(depositAmount: BigNumber, isNativeEth: boolean | undefined): ExecuteParams {
     return {
       methodName: EXECUTE_METHOD,
       args: [
@@ -101,10 +87,7 @@ export abstract class MarginlyPoolExecute {
    * @param isNativeEth - if withdrawn token is native eth so it can be unwrapped in process (false if undefined)
    * @returns method and parameters for Marginly `withdraw base` call
    */
-  public static withdrawBase(
-    withdrawAmount: BigNumber,
-    isNativeEth: boolean | undefined
-  ): ExecuteParams {
+  public static withdrawBase(withdrawAmount: BigNumber, isNativeEth: boolean | undefined): ExecuteParams {
     return {
       methodName: EXECUTE_METHOD,
       args: [
@@ -125,9 +108,7 @@ export abstract class MarginlyPoolExecute {
    * @param isNativeEth - if withdrawn token is native eth so it can be unwrapped in process (false if undefined)
    * @returns method and parameters for Marginly `withdraw base` call.
    */
-  public static withdrawBaseAll(
-    isNativeEth: boolean | undefined
-  ): ExecuteParams {
+  public static withdrawBaseAll(isNativeEth: boolean | undefined): ExecuteParams {
     return {
       methodName: EXECUTE_METHOD,
       args: [
@@ -148,10 +129,7 @@ export abstract class MarginlyPoolExecute {
    * @param isNativeEth - if withdrawn token is native eth so it can be unwrapped in process (false if undefined)
    * @returns method and parameters for Marginly `withdraw base` call
    */
-  public static withdrawQuote(
-    withdrawAmount: BigNumber,
-    isNativeEth: boolean | undefined
-  ): ExecuteParams {
+  public static withdrawQuote(withdrawAmount: BigNumber, isNativeEth: boolean | undefined): ExecuteParams {
     return {
       methodName: EXECUTE_METHOD,
       args: [
@@ -172,9 +150,7 @@ export abstract class MarginlyPoolExecute {
    * @param isNativeEth - if withdrawn token is native eth so it can be unwrapped in process (false if undefined)
    * @returns method and parameters for Marginly `withdraw quote` call.
    */
-  public static withdrawQuoteAll(
-    isNativeEth: boolean | undefined
-  ): ExecuteParams {
+  public static withdrawQuoteAll(isNativeEth: boolean | undefined): ExecuteParams {
     return {
       methodName: EXECUTE_METHOD,
       args: [
@@ -207,15 +183,7 @@ export abstract class MarginlyPoolExecute {
 
     return {
       methodName: EXECUTE_METHOD,
-      args: [
-        CallType.Long,
-        longAmount,
-        ZERO,
-        limitPriceX96,
-        false,
-        ethers.constants.AddressZero,
-        swapCalldata,
-      ],
+      args: [CallType.Long, longAmount, ZERO, limitPriceX96, false, ethers.constants.AddressZero, swapCalldata],
       value: ZERO,
     };
   }
@@ -271,15 +239,7 @@ export abstract class MarginlyPoolExecute {
 
     return {
       methodName: EXECUTE_METHOD,
-      args: [
-        CallType.Short,
-        shortAmount,
-        ZERO,
-        limitPriceX96,
-        false,
-        ethers.constants.AddressZero,
-        swapCalldata,
-      ],
+      args: [CallType.Short, shortAmount, ZERO, limitPriceX96, false, ethers.constants.AddressZero, swapCalldata],
       value: ZERO,
     };
   }
@@ -354,15 +314,7 @@ export abstract class MarginlyPoolExecute {
   public static reinit(): ExecuteParams {
     return {
       methodName: EXECUTE_METHOD,
-      args: [
-        CallType.Reinit,
-        ZERO,
-        ZERO,
-        ZERO,
-        false,
-        ethers.constants.AddressZero,
-        SWAP_CALLDATA_DEFAULT,
-      ],
+      args: [CallType.Reinit, ZERO, ZERO, ZERO, false, ethers.constants.AddressZero, SWAP_CALLDATA_DEFAULT],
       value: ZERO,
     };
   }
@@ -373,15 +325,7 @@ export abstract class MarginlyPoolExecute {
   public static reinitWithBalanceSync(): ExecuteParams {
     return {
       methodName: EXECUTE_METHOD,
-      args: [
-        CallType.Reinit,
-        ZERO,
-        ZERO,
-        ZERO,
-        true,
-        ethers.constants.AddressZero,
-        SWAP_CALLDATA_DEFAULT,
-      ],
+      args: [CallType.Reinit, ZERO, ZERO, ZERO, true, ethers.constants.AddressZero, SWAP_CALLDATA_DEFAULT],
       value: ZERO,
     };
   }
@@ -416,9 +360,7 @@ export abstract class MarginlyPoolExecute {
    * @param isNativeEth - if withdrawn token is native eth so it can be unwrapped in process (false if undefined)
    * @returns method and parameters for Marginly `emergency withdraw` call.
    */
-  public static emergencyWithdraw(
-    isNativeEth: boolean | undefined
-  ): ExecuteParams {
+  public static emergencyWithdraw(isNativeEth: boolean | undefined): ExecuteParams {
     return {
       methodName: EXECUTE_METHOD,
       args: [

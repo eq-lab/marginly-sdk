@@ -1,7 +1,7 @@
-import { BigNumber, ethers } from "ethers";
+import { BigNumber, ethers } from 'ethers';
 
 /** Name of main Marginly method */
-export const EXECUTE_METHOD = "execute";
+export const EXECUTE_METHOD = 'execute';
 
 /** X96 representation of 1 */
 export const FP96_ONE = BigNumber.from(1n << 96n);

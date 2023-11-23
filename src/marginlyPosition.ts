@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers";
+import { BigNumber } from 'ethers';
 import {
   calcLongLeverage,
   calcLongLiquidationPriceX96,
@@ -10,8 +10,8 @@ import {
   calcShortLiquidationPriceX96,
   MarginlyCoeffs,
   mulFP96,
-} from "./marginlyPoolMath";
-import { FP96_ONE } from "./consts";
+} from './marginlyPoolMath';
+import { FP96_ONE } from './consts';
 
 /** Enum with position type in Marginly */
 export enum PositionType {
@@ -24,7 +24,7 @@ export enum PositionType {
 /** Marginly pool position */
 export class MarginlyPosition {
   /** @field position type */
-  public type: PositionType
+  public type: PositionType;
 
   /** @field absolute value of position base tokens amount */
   public baseAmount: BigNumber;
@@ -40,14 +40,8 @@ export class MarginlyPosition {
   ) {
     this.type = type;
     if (type == PositionType.Lend) {
-      this.baseAmount = mulFP96(
-        coeffs.baseCollateralCoeff,
-        discountedBaseAmount
-      );
-      this.quoteAmount = mulFP96(
-        coeffs.quoteCollateralCoeff,
-        discountedQuoteAmount
-      );
+      this.baseAmount = mulFP96(coeffs.baseCollateralCoeff, discountedBaseAmount);
+      this.quoteAmount = mulFP96(coeffs.quoteCollateralCoeff, discountedQuoteAmount);
     } else if (type == PositionType.Short) {
       this.baseAmount = calcRealBaseCollateral(
         coeffs.baseCollateralCoeff,
@@ -55,15 +49,9 @@ export class MarginlyPosition {
         discountedBaseAmount,
         discountedQuoteAmount
       );
-      this.quoteAmount = calcRealQuoteDebt(
-        coeffs.quoteDebtCoeff,
-        discountedQuoteAmount
-      );
+      this.quoteAmount = calcRealQuoteDebt(coeffs.quoteDebtCoeff, discountedQuoteAmount);
     } else if (type == PositionType.Long) {
-      this.baseAmount = calcRealBaseDebt(
-        coeffs.baseDebtCoeff,
-        discountedBaseAmount
-      );
+      this.baseAmount = calcRealBaseDebt(coeffs.baseDebtCoeff, discountedBaseAmount);
       this.quoteAmount = calcRealQuoteCollateral(
         coeffs.quoteCollateralCoeff,
         coeffs.quoteDelevCoeff,
@@ -76,7 +64,7 @@ export class MarginlyPosition {
     }
   }
 
-  /** 
+  /**
    * @param basePriceX96 base to quote price in X96 to calculate leverage with
    * @returns position leverage (undefined if position is `Uninitialized`)
    */
@@ -92,35 +80,24 @@ export class MarginlyPosition {
     }
   }
 
-  /** 
+  /**
    * @param maxLeverage critical leverage
    * @returns position liquidation price (undefined if position is `Uninitialized` or `Lend`)
    */
   public calcLiquidationPrice(maxLeverage: BigNumber): BigNumber | undefined {
     if (this.type == PositionType.Long) {
-      return calcLongLiquidationPriceX96(
-        this.baseAmount,
-        this.quoteAmount,
-        maxLeverage
-      );
+      return calcLongLiquidationPriceX96(this.baseAmount, this.quoteAmount, maxLeverage);
     } else if (this.type == PositionType.Short) {
-      return calcShortLiquidationPriceX96(
-        this.quoteAmount,
-        this.baseAmount,
-        maxLeverage
-      );
+      return calcShortLiquidationPriceX96(this.quoteAmount, this.baseAmount, maxLeverage);
     } else {
       return undefined;
     }
   }
 
-  /** 
+  /**
    * @returns available for withdrawal amount of base tokens
    */
-  public baseWithdrawAvailable(
-    basePriceX96: BigNumber,
-    maxLeverage: BigNumber
-  ): BigNumber {
+  public baseWithdrawAvailable(basePriceX96: BigNumber, maxLeverage: BigNumber): BigNumber {
     if (this.type == PositionType.Lend) {
       return this.baseAmount;
     } else if (this.type == PositionType.Long) {
@@ -136,13 +113,10 @@ export class MarginlyPosition {
     }
   }
 
-   /** 
+  /**
    * @returns available for withdrawal amount of quote tokens
    */
-  public quoteWithdrawAvailable(
-    basePriceX96: BigNumber,
-    maxLeverage: BigNumber
-  ): BigNumber {
+  public quoteWithdrawAvailable(basePriceX96: BigNumber, maxLeverage: BigNumber): BigNumber {
     if (this.type == PositionType.Lend) {
       return this.quoteAmount;
     } else if (this.type == PositionType.Short) {

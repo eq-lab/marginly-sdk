@@ -1,10 +1,10 @@
 /** @module MarginlyPoolMath Marginly underlying math ts implementation */
 
-import { BigNumber } from "ethers";
-import { FP96_ONE } from "./consts";
+import { BigNumber } from 'ethers';
+import { FP96_ONE } from './consts';
 
-/** 
- * Coefficients used in Marginly for interest rate and deleverage calculations 
+/**
+ * Coefficients used in Marginly for interest rate and deleverage calculations
  * @remark all the values are in X96 format
  */
 export interface MarginlyCoeffs {
@@ -17,25 +17,19 @@ export interface MarginlyCoeffs {
 }
 
 /** @returns multiplication result with at least one of the multipliers in X96 format */
-export function mulFP96(
-  multiplier: BigNumber,
-  multiplicand: BigNumber
-): BigNumber {
+export function mulFP96(multiplier: BigNumber, multiplicand: BigNumber): BigNumber {
   return multiplier.mul(multiplicand).div(FP96_ONE);
 }
 
-/** 
+/**
  * @param denominator must be in X96 format
  * @returns division by X96 number result
  */
-export function divFP96(
-  numerator: BigNumber,
-  denominator: BigNumber
-): BigNumber {
+export function divFP96(numerator: BigNumber, denominator: BigNumber): BigNumber {
   return numerator.mul(FP96_ONE).div(denominator);
 }
 
-/** 
+/**
  * @param baseCollateralCoeffX96 base collateral coefficient in X96 format
  * @param baseDelevCoeffX96 base deleverage coefficient in X96 format
  * @returns real base collateral from provided coefficients and discounted values
@@ -46,12 +40,10 @@ export function calcRealBaseCollateral(
   discountedBaseCollateral: BigNumber,
   discountedQuoteDebt: BigNumber
 ): BigNumber {
-  return mulFP96(baseCollateralCoeffX96, discountedBaseCollateral).sub(
-    mulFP96(baseDelevCoeffX96, discountedQuoteDebt)
-  );
+  return mulFP96(baseCollateralCoeffX96, discountedBaseCollateral).sub(mulFP96(baseDelevCoeffX96, discountedQuoteDebt));
 }
 
-/** 
+/**
  * @param quoteCollateralCoeffX96 base collateral coefficient in X96 format
  * @param quoteDelevCoeffX96 base deleverage coefficient in X96 format
  * @returns real quote collateral from provided coefficients and discounted values
@@ -67,29 +59,23 @@ export function calcRealQuoteCollateral(
   );
 }
 
-/** 
+/**
  * @param baseDebtCoeffX96 base debt coefficient in X96 format
  * @returns real base debt from provided coefficients and discounted values
-*/
-export function calcRealBaseDebt(
-  baseDebtCoeffX96: BigNumber,
-  discountedBaseDebt: BigNumber
-): BigNumber {
+ */
+export function calcRealBaseDebt(baseDebtCoeffX96: BigNumber, discountedBaseDebt: BigNumber): BigNumber {
   return mulFP96(baseDebtCoeffX96, discountedBaseDebt);
 }
 
-/** 
+/**
  * @param baseDebtCoeffX96 base debt coefficient in X96 format
  * @returns real quote debt from provided coefficients and discounted values
  */
-export function calcRealQuoteDebt(
-  quoteDebtCoeffX96: BigNumber,
-  discountedQuoteDebt: BigNumber
-): BigNumber {
+export function calcRealQuoteDebt(quoteDebtCoeffX96: BigNumber, discountedQuoteDebt: BigNumber): BigNumber {
   return mulFP96(quoteDebtCoeffX96, discountedQuoteDebt);
 }
 
-/** 
+/**
  * @param realBaseCollateral long position base collateral
  * @param realQuoteDebt long position quote debt
  * @param basePriceX96 base to quote price in X96 format to calculate leverage with
@@ -104,7 +90,7 @@ export function calcLongLeverage(
   return collateralInQuote.div(collateralInQuote.sub(realQuoteDebt));
 }
 
-/** 
+/**
  * @param realQuoteCollateral short position quote collateral
  * @param realBaseDebt short position base debt
  * @param basePriceX96 base to quote price in X96 format to calculate leverage with
@@ -119,7 +105,7 @@ export function calcShortLeverage(
   return realQuoteCollateral.div(realQuoteCollateral.sub(debtInQuote));
 }
 
-/** 
+/**
  * @returns liquidation price of long position
  * @param realBaseCollateral long position base collateral
  * @param realQuoteDebt long position quote debt
@@ -130,13 +116,10 @@ export function calcLongLiquidationPriceX96(
   realQuoteDebt: BigNumber,
   maxLeverage: BigNumber
 ): BigNumber {
-  return divFP96(
-    maxLeverage.mul(realQuoteDebt),
-    maxLeverage.sub(1).mul(realBaseCollateral)
-  );
+  return divFP96(maxLeverage.mul(realQuoteDebt), maxLeverage.sub(1).mul(realBaseCollateral));
 }
 
-/** 
+/**
  * @returns liquidation price of short position
  * @param realQuoteCollateral short position quote collateral
  * @param realBaseDebt short position base debt
@@ -147,10 +130,7 @@ export function calcShortLiquidationPriceX96(
   realBaseDebt: BigNumber,
   maxLeverage: BigNumber
 ): BigNumber {
-  return divFP96(
-    maxLeverage.sub(1).mul(realQuoteCollateral),
-    maxLeverage.mul(realBaseDebt)
-  );
+  return divFP96(maxLeverage.sub(1).mul(realQuoteCollateral), maxLeverage.mul(realBaseDebt));
 }
 
 /**
@@ -165,7 +145,7 @@ export function convertPriceX96ToHuman(
   quoteDecimal: BigNumber
 ): BigNumber {
   const power = baseDecimal.sub(quoteDecimal);
-  return priceX96.mul(BigNumber.from(10).pow(power)).div(FP96_ONE);
+  return priceX96.div(BigNumber.from(10).pow(power)).div(FP96_ONE);
 }
 
 /**
@@ -174,11 +154,7 @@ export function convertPriceX96ToHuman(
  * @param quoteDecimal decimals of quote token
  * @returns X96 representation of price
  */
-export function convertPriceHumanToX96(
-  price: BigNumber,
-  baseDecimal: BigNumber,
-  quoteDecimal: BigNumber
-): BigNumber {
+export function convertPriceHumanToX96(price: BigNumber, baseDecimal: BigNumber, quoteDecimal: BigNumber): BigNumber {
   const power = baseDecimal.sub(quoteDecimal);
   return price.mul(FP96_ONE).mul(BigNumber.from(10).pow(power));
 }
