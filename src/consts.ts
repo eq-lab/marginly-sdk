@@ -10,3 +10,5 @@ export const ZERO = ethers.constants.Zero;
 
 /** Default value of `swapCalldata` */
 export const SWAP_CALLDATA_DEFAULT = ZERO;
+
+export const EXECUTE_METHOD_ENCODED = '0xb07a6570';
