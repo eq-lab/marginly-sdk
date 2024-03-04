@@ -1,6 +1,6 @@
 {
   "name": "@equilab/marginly-sdk",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "index.ts",
   "license": "GPL-2.0-or-later",
   "scripts": {
