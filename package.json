@@ -1,14 +1,16 @@
 {
   "name": "@equilab/marginly-sdk",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "index.ts",
   "license": "GPL-2.0-or-later",
   "scripts": {
     "build": "tsc --build",
     "test": "tsdx test --no-cache",
-    "prettify": "prettier --write ./src/**/*"
+    "prettify": "prettier --write ./src/**/*",
+    "generate-types": "typechain --target ethers-v5 --out-dir src/abis/types \"./src/abis/**/*.json\""
   },
   "devDependencies": {
+    "@typechain/ethers-v5": "^11.1.2",
     "@types/chai": "4.3.12",
     "@types/jest": "29.5.12",
     "@types/mocha": "10.0.6",
@@ -16,6 +18,7 @@
     "ethers": "^5.7.2",
     "ts-node": "10.9.2",
     "tsdx": "^0.14.1",
+    "typechain": "^8.3.2",
     "typescript": "^4.9.4"
   }
 }
