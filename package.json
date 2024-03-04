@@ -1,8 +1,16 @@
 {
   "name": "@equilab/marginly-sdk",
-  "version": "1.0.4",
-  "main": "index.ts",
+  "version": "1.0.5",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
   "license": "GPL-2.0-or-later",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "package.json"
+  ],
   "scripts": {
     "build": "tsc --build",
     "test": "tsdx test --no-cache",
