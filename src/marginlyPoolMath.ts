@@ -145,7 +145,7 @@ export function convertPriceX96ToHuman(
   quoteDecimal: BigNumber
 ): BigNumber {
   const power = baseDecimal.sub(quoteDecimal);
-  return priceX96.div(BigNumber.from(10).pow(power)).div(FP96_ONE);
+  return priceX96.mul(BigNumber.from(10).pow(power)).div(FP96_ONE);
 }
 
 /**
