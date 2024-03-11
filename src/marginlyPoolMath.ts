@@ -1,7 +1,7 @@
 /** @module MarginlyPoolMath Marginly underlying math ts implementation */
 
 import { BigNumber } from 'ethers';
-import { FP96_ONE } from './consts';
+import { FP96_ONE } from './consts.js';
 
 /**
  * Coefficients used in Marginly for interest rate and deleverage calculations
