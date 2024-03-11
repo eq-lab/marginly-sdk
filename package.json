@@ -1,6 +1,6 @@
 {
   "name": "@equilab/marginly-sdk",
-  "version": "1.0.7",
+  "version": "1.0.9",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "GPL-2.0-or-later",
@@ -12,9 +12,10 @@
     "package.json"
   ],
   "scripts": {
-    "build": "tsc --build",
+    "build": "rm -rf ./dist && tsc --build",
     "test": "tsdx test --no-cache",
     "prettify": "prettier --write ./src/**/*",
+    "prepublish": "yarn build",
     "generate-types": "typechain --target ethers-v5 --out-dir src/abis/types \"./src/abis/**/*.json\""
   },
   "devDependencies": {
