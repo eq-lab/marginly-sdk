@@ -159,7 +159,15 @@ describe('Price conversion', () => {
     const quoteDecimals = BigNumber.from(6);
     const actual = convertPriceStringToX96('4228.3950348885', baseDecimals, quoteDecimals);
 
-    expect(actual.toBigInt()).to.be.eq(33500796899865450163776461401334883129753n);
+    expect(actual.toBigInt()).to.be.eq(335007968998654501637764614013348831297n);
+  });
+
+  it('Convert 43782.8999999999996 to X96', async () => {
+    const baseDecimals = BigNumber.from(18);
+    const quoteDecimals = BigNumber.from(6);
+    const actual = convertPriceStringToX96('43782.8999999999996', baseDecimals, quoteDecimals);
+
+    expect(actual.toBigInt()).to.be.eq(3468838716545783987196212908901716806456n);
   });
 });
 
@@ -167,6 +175,10 @@ describe('extractFractionAndWhole', () => {
   it('should extract whole and fraction when a valid number with both parts is provided', () => {
     const result = extractFractionAndWhole('123.456');
     expect(result).to.deep.eq({ whole: '123', fraction: '456' });
+  });
+  it('should extract whole and fraction when a valid number with both parts is provided', () => {
+    const result = extractFractionAndWhole('43782.8999999999996');
+    expect(result).to.deep.eq({ whole: '43782', fraction: '8999999999996' });
   });
 
   it('should extract only the whole part when a valid number with only the whole part is provided', () => {
