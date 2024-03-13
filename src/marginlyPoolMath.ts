@@ -1,7 +1,7 @@
 /** @module MarginlyPoolMath Marginly underlying math ts implementation */
 
 import { BigNumber } from 'ethers';
-import { FP96_ONE } from './consts.js';
+import { FP96_ONE } from './consts';
 
 /**
  * Coefficients used in Marginly for interest rate and deleverage calculations
@@ -156,5 +156,31 @@ export function convertPriceX96ToHuman(
  */
 export function convertPriceHumanToX96(price: BigNumber, baseDecimal: BigNumber, quoteDecimal: BigNumber): BigNumber {
   const power = baseDecimal.sub(quoteDecimal);
-  return price.mul(FP96_ONE).mul(BigNumber.from(10).pow(power));
+  return price.mul(FP96_ONE).div(BigNumber.from(10).pow(power));
+}
+
+export const isValidNumber = (s: string): boolean => /^[+-]?\d*\.?\d+$/.test(s);
+
+export function extractFractionAndWhole(s: string): { whole: string | undefined; fraction?: string } {
+  if (!isValidNumber(s)) return { whole: undefined };
+
+  const parts = s.split('.');
+  const whole = parts[0];
+  const fraction = parts[1];
+  return { whole, fraction };
+}
+
+/**
+ * @param priceX price in human readable form to convert
+ * @param baseDecimal decimals of base token
+ * @param quoteDecimal decimals of quote token
+ * @returns X96 representation of price
+ */
+export function convertPriceStringToX96(price: string, baseDecimal: BigNumber, quoteDecimal: BigNumber): BigNumber {
+  const { whole, fraction } = extractFractionAndWhole(price);
+  const baseDecimalsNext = baseDecimal.sub(Math.max(fraction?.length || 0, 0));
+  const priceNext = BigNumber.from(`${whole}${fraction || ''}`);
+  const power = baseDecimalsNext.sub(quoteDecimal);
+
+  return priceNext.mul(FP96_ONE).div(BigNumber.from(10).pow(power));
 }

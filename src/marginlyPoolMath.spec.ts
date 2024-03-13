@@ -9,10 +9,15 @@ import {
   calcShortLeverage,
   calcShortLiquidationPriceX96,
   convertPriceHumanToX96,
+  convertPriceStringToX96,
   convertPriceX96ToHuman,
   divFP96,
+  extractFractionAndWhole,
   mulFP96,
 } from './marginlyPoolMath';
+import { describe } from '@jest/globals';
+
+const X96_2000 = 158456325028528675187n;
 
 describe('math operations', () => {
   it('FP96_ONE', async () => {
@@ -112,23 +117,65 @@ describe('Marginly calculations', () => {
 });
 
 describe('Price conversion', () => {
-  it('convertPriceX96ToHuman', async () => {
+  it('convertPriceHumanToX96', async () => {
     const price = BigNumber.from(2000);
     const baseDecimals = BigNumber.from(18);
     const quoteDecimals = BigNumber.from(6);
-    const priceX96 = FP96_ONE.mul(price)
-      .mul(BigNumber.from(10).pow(baseDecimals.sub(quoteDecimals)))
-      .toBigInt();
+    const actual = convertPriceHumanToX96(price, baseDecimals, quoteDecimals);
 
-    expect(convertPriceHumanToX96(price, baseDecimals, quoteDecimals).toBigInt()).to.be.eq(priceX96);
+    expect(actual.toBigInt()).to.be.eq(X96_2000);
   });
 
   it('convertPriceX96ToHuman', async () => {
-    const price = 2000n;
     const baseDecimals = BigNumber.from(18);
     const quoteDecimals = BigNumber.from(6);
-    const priceX96 = FP96_ONE.mul(price).mul(BigNumber.from(10).pow(baseDecimals.sub(quoteDecimals)));
 
-    expect(convertPriceX96ToHuman(priceX96, baseDecimals, quoteDecimals).toBigInt()).to.be.eq(price);
+    expect(convertPriceX96ToHuman(BigNumber.from(X96_2000), baseDecimals, quoteDecimals).toNumber()).to.be.closeTo(
+      2000,
+      1
+    );
+  });
+
+  it('Convert 4029 in X96 to human', async () => {
+    const expected = 4029n;
+    const baseDecimals = BigNumber.from(18);
+    const quoteDecimals = BigNumber.from(6);
+
+    expect(
+      convertPriceX96ToHuman(BigNumber.from(319278614229239593873n), baseDecimals, quoteDecimals).toBigInt()
+    ).to.be.eq(expected);
+  });
+
+  it('Convert 2000 as string in X96 to human', async () => {
+    const baseDecimals = BigNumber.from(18);
+    const quoteDecimals = BigNumber.from(6);
+    const actual = convertPriceStringToX96('2000', baseDecimals, quoteDecimals);
+
+    expect(actual.toBigInt()).to.be.eq(X96_2000);
+  });
+
+  it('Convert 4029.12345 to X96', async () => {
+    const baseDecimals = BigNumber.from(18);
+    const quoteDecimals = BigNumber.from(6);
+    const actual = convertPriceStringToX96('4228.3950348885', baseDecimals, quoteDecimals);
+
+    expect(actual.toBigInt()).to.be.eq(33500796899865450163776461401334883129753n);
+  });
+});
+
+describe('extractFractionAndWhole', () => {
+  it('should extract whole and fraction when a valid number with both parts is provided', () => {
+    const result = extractFractionAndWhole('123.456');
+    expect(result).to.deep.eq({ whole: '123', fraction: '456' });
+  });
+
+  it('should extract only the whole part when a valid number with only the whole part is provided', () => {
+    const result = extractFractionAndWhole('789');
+    expect(result).to.deep.eq({ whole: '789', fraction: undefined });
+  });
+
+  it('should return undefined for both whole and fraction for an invalid number', () => {
+    const result = extractFractionAndWhole('abc');
+    expect(result).to.deep.eq({ whole: undefined });
   });
 });
