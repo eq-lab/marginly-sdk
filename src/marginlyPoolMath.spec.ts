@@ -169,6 +169,14 @@ describe('Price conversion', () => {
 
     expect(actual.toBigInt()).to.be.eq(3468838716545783987196212908901716806456n);
   });
+
+  it('Convert 3781.95 to X96', async () => {
+    const baseDecimals = BigNumber.from(18);
+    const quoteDecimals = BigNumber.from(6);
+    const actual = convertPriceStringToX96('3781.95', baseDecimals, quoteDecimals);
+
+    expect(actual.toBigInt()).to.be.eq(3468838716545783987196212908901716806456n);
+  });
 });
 
 describe('extractFractionAndWhole', () => {

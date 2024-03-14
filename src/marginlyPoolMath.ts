@@ -179,12 +179,15 @@ export function extractFractionAndWhole(s: string): { whole: string | undefined;
 export function convertPriceStringToX96(price: string, baseDecimal: BigNumber, quoteDecimal: BigNumber): BigNumber {
   const { whole, fraction } = extractFractionAndWhole(price);
   const baseDecimalsNext = fraction
-    ? BigNumber.from(Math.min(baseDecimal.sub(quoteDecimal).toNumber(), fraction.length))
+    ? fraction.length > baseDecimal.sub(quoteDecimal).toNumber()
+      ? quoteDecimal
+      : baseDecimal.sub(BigNumber.from(fraction.length))
     : baseDecimal;
 
   const priceNext = BigNumber.from(fraction ? `${whole}${fraction.slice(0, baseDecimalsNext.toNumber())}` : price);
 
   const power = baseDecimalsNext.sub(quoteDecimal);
+  console.log(whole, fraction, baseDecimalsNext.toString(), priceNext.toString(), power.toString());
 
   return priceNext.mul(FP96_ONE).div(BigNumber.from(10).pow(power));
 }
