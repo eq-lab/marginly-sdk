@@ -187,7 +187,6 @@ export function convertPriceStringToX96(price: string, baseDecimal: BigNumber, q
   const priceNext = BigNumber.from(fraction ? `${whole}${fraction.slice(0, baseDecimalsNext.toNumber())}` : price);
 
   const power = baseDecimalsNext.sub(quoteDecimal);
-  console.log(whole, fraction, baseDecimalsNext.toString(), priceNext.toString(), power.toString());
 
   return priceNext.mul(FP96_ONE).div(BigNumber.from(10).pow(power));
 }
