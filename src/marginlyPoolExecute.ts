@@ -207,7 +207,7 @@ export function getDepositBaseAndLongArgs(
       depositAmount,
       longAmount,
       limitPriceX96,
-      false,
+      !!isNativeEth,
       ethers.constants.AddressZero,
       swapCalldata,
     ],
