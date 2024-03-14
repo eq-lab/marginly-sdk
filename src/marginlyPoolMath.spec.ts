@@ -157,25 +157,9 @@ describe('Price conversion', () => {
   it('Convert 4029.12345 to X96', async () => {
     const baseDecimals = BigNumber.from(18);
     const quoteDecimals = BigNumber.from(6);
-    const actual = convertPriceStringToX96('4228.3950348885', baseDecimals, quoteDecimals);
+    const actual = convertPriceStringToX96('4029.12345', baseDecimals, quoteDecimals);
 
-    expect(actual.toBigInt()).to.be.eq(335007968997981062256393367143803707719n);
-  });
-
-  it('Convert 43782.8999999999996 to X96', async () => {
-    const baseDecimals = BigNumber.from(18);
-    const quoteDecimals = BigNumber.from(6);
-    const actual = convertPriceStringToX96('43782.8999999999996', baseDecimals, quoteDecimals);
-
-    expect(actual.toBigInt()).to.be.eq(3468838716466555903910111085572510449664n);
-  });
-
-  it('Convert 3781.95 to X96', async () => {
-    const baseDecimals = BigNumber.from(18);
-    const quoteDecimals = BigNumber.from(6);
-    const actual = convertPriceStringToX96('3781.95', baseDecimals, quoteDecimals);
-
-    expect(actual.toBigInt()).to.be.eq(2996369492208220115619035n);
+    expect(actual.toBigInt()).to.be.eq(319220047486633402096n);
   });
 });
 

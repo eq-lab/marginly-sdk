@@ -161,12 +161,15 @@ export function convertPriceHumanToX96(price: BigNumber, baseDecimal: BigNumber,
 
 export const isValidNumber = (s: string): boolean => /^[+-]?\d*\.?\d+$/.test(s);
 
-export function extractFractionAndWhole(s: string): { whole: string | undefined; fraction?: string } {
+export function extractFractionAndWhole(
+  s: string,
+  maxDecimals: number = 18
+): { whole: string | undefined; fraction?: string } {
   if (!isValidNumber(s)) return { whole: undefined };
 
   const parts = s.split('.');
   const whole = parts[0];
-  const fraction = parts[1];
+  const fraction = parts[1]?.slice(0, maxDecimals);
   return { whole, fraction };
 }
 
@@ -178,15 +181,10 @@ export function extractFractionAndWhole(s: string): { whole: string | undefined;
  */
 export function convertPriceStringToX96(price: string, baseDecimal: BigNumber, quoteDecimal: BigNumber): BigNumber {
   const { whole, fraction } = extractFractionAndWhole(price);
-  const baseDecimalsNext = fraction
-    ? fraction.length > baseDecimal.sub(quoteDecimal).toNumber()
-      ? quoteDecimal
-      : baseDecimal.sub(BigNumber.from(fraction.length))
-    : baseDecimal;
 
-  const priceNext = BigNumber.from(fraction ? `${whole}${fraction.slice(0, baseDecimalsNext.toNumber())}` : price);
+  const priceNext = BigNumber.from(`${whole}${fraction ?? ''}`);
 
-  const power = baseDecimalsNext.sub(quoteDecimal);
+  const power = baseDecimal.sub(quoteDecimal).add(fraction?.length ?? 0);
 
   return priceNext.mul(FP96_ONE).div(BigNumber.from(10).pow(power));
 }
