@@ -207,7 +207,7 @@ export function getDepositBaseAndLongArgs(
       depositAmount,
       longAmount,
       limitPriceX96,
-      false,
+      !!isNativeEth,
       ethers.constants.AddressZero,
       swapCalldata,
     ],
@@ -288,7 +288,15 @@ export function getClosePositionArgs(
 
   return {
     methodName: EXECUTE_METHOD,
-    args: [CallType.DepositQuote, ZERO, ZERO, limitPriceX96, !!isNativeEth, ethers.constants.AddressZero, swapCalldata],
+    args: [
+      CallType.ClosePosition,
+      ZERO,
+      ZERO,
+      limitPriceX96,
+      !!isNativeEth,
+      ethers.constants.AddressZero,
+      swapCalldata,
+    ],
     value: ZERO,
   };
 }
