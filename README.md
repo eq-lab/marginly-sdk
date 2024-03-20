@@ -1,54 +1,257 @@
 # Marginly SDK
+
 SDK for the Marginly protocol
 
-## Usage
-This SDK contains bindings for building Marginly contract calls and reproducing some inner math and calculations.
+## Installation
 
-### MarginlyPoolExecute
-
-Contains an abstract class with methods to generate calls input for Marginly contracts.
-
-```ts
-import { BigNumber, parseUnits } from 'ethers';
-import { convertPriceHumanToX96, MarginlyPoolExecute } from '@eq-lab/marginly-sdk';
-
-const wethDecimals = BigNumber.from(18);
-const usdcDecimals = BigNumber.from(6);
-
-const depositBaseAmount = parseUnits('1', wethDecimals);
-const longAmount = parseUnits('10', wethDecimals);
-const limitPriceX96 = convertPriceHumanToX96(
-    BigNumber.from(2000), 
-    wethDecimals, 
-    usdcDecimals
-);
-
-const { method, args, value } = MarginlyPoolExecute.depositBaseAndLong(
-    depositBaseAmount, 
-    longAmount, 
-    limitPriceX96
-);
+```sh
+$ yarn add @equilab/marginly-sdk
 ```
 
-### MarginlyPoolPosition
+## Usage with ethers.js
 
-This class is used to construct a Marginly position representation with real values from pools inner discounted ones. 
-Moreover it contains methods for position characteristics calculations such as:
-* leverage
-* liquidation price
-* available withdraw amounts
+### Chain and pool
 
-### MarginlyPoolMath
+This example will use Arbitrum mainnet and WETH/USDC marginly pool contract. BigNumber is imported from ethers.js
 
-Contains low level math, used in contract calculations and other modules of sdk including:
-* FP96 math
-* discounted-to-real values conversions
-* X96 price conversions
-* low level position/pool parameters calculations (e.g. leverage, liquidation price)
+```typescript
+import { BigNumber, BigNumberish, ethers } from 'ethers';
 
-## Tests
+const CHAIN_ID = 42161;
+const POOL_ADDRESS = '0x87e711BcB9Ed1f2f6dec8fcC74cD2e0613D43b86';
+```
 
-Run tests
-```sh
-yarn test
+### Contract initialization
+
+```typescript
+import type { MarginlyPool } from "@equilab/marginly-sdk/abis/types/MarginlyPool";
+import ABI from "@equilab/marginly-sdk/abis/marginly-pool.json";
+
+const contract = useContract<MarginlyPool>(POOL_ADDRESS, ABI.abi, true);
+```
+
+### Requesting neccessary parameters
+
+This example is using `updatedAt` counter with some interval.
+
+```typescript
+import { MarginlyCoeffs } from '@equilab/marginly-sdk';
+
+const [basePriceX96, setBasePriceX96] = useState<BigNumber>();
+const [coeffs, setCoeffs] = useState<MarginlyCoeffs>();
+const [baseTokenAddress, setBaseTokenAddress] = useState<string>();
+const [quoteTokenAddress, setQuoteTokenAddress] = useState<string>();
+
+useEffect(() => {
+  if (!contract) return;
+
+  contract
+    .baseToken()
+    .then(res => setBaseTokenAddress(res))
+    .catch(e => e instanceof Error && console.error(e));
+
+  contract
+    .quoteToken()
+    .then(res => setQuoteTokenAddress(res))
+    .catch(e => e instanceof Error && console.error(e));
+
+  contract
+    .getLiquidationPrice()
+    .then(res => {
+      setBasePriceX96(BigNumber.from(res.inner));
+    })
+    .catch(e => e instanceof Error && console.error(e));
+
+  Promise.all([
+    contract.baseCollateralCoeff(),
+    contract.quoteCollateralCoeff(),
+    contract.baseDelevCoeff(),
+    contract.quoteDelevCoeff(),
+    contract.baseDebtCoeff(),
+    contract.quoteDebtCoeff(),
+  ])
+    .then(
+      ([baseCollateralCoeff, quoteCollateralCoeff, baseDelevCoeff, quoteDelevCoeff, baseDebtCoeff, quoteDebtCoeff]) => {
+        setCoeffs({
+          baseCollateralCoeff,
+          quoteCollateralCoeff,
+          baseDelevCoeff,
+          quoteDelevCoeff,
+          baseDebtCoeff,
+          quoteDebtCoeff,
+        });
+      }
+    )
+    .catch(e => e instanceof Error && console.error(e));
+}, [contract, updatedAt]);
+```
+
+There are 2 methods to get latest base price: `getBasePrice` and `getLiquidationPrice`. Both are twap prices with different intervals. `getLiquidationPrice` updates more frequently.
+
+Use base and quote token addresses to request their parameters from chain.
+
+### Requesting account position
+
+```typescript
+import { useWeb3React } from '@web3-react/core';
+
+const { account, provider } = useWeb3React();
+const [position, setPosition] = useState<{
+  _type: number;
+  heapPosition: number;
+  discountedBaseAmount: BigNumber;
+  discountedQuoteAmount: BigNumber;
+}>();
+
+useEffect(() => {
+  if (!account || !contract) return;
+
+  contract
+    .positions(account)
+    .then(res => {
+      setPosition(res);
+    })
+    .catch(e => e instanceof Error && console.error(e));
+}, [contract, updatedAt, account]);
+```
+
+### Creating position object
+
+After recieving position and coeffs we can use MarginlyPosition class
+
+```typescript
+import { MarginlyPosition } from '@equilab/marginly-sdk';
+
+const derivedPosition = useMemo(() => {
+  if (!position || !coeffs) return;
+
+  return new MarginlyPosition(coeffs, position._type, position.discountedBaseAmount, position.discountedQuoteAmount);
+}, [position, coeffs]);
+```
+
+### Open position
+
+Create transaction to open position. You need deposit amount and position amount to open position.
+
+Long position example
+
+```
+Depositing 0.1 ETH (will be auto converted to WETH)
+With leverage 5
+means position amount equals 0.4
+```
+
+Short position example
+
+```
+Depositing 100 USDC
+With leverage 5
+means position amount equals [(5 - 1) * 100] / basePrice
+```
+
+When opening position `limitPrice` is provided so you can limit your slippage. Example below has slippage limit 5%. Limit price is in fixed point x96 format.
+
+Depending on position direction `getDepositBaseAndLongArgs` or `getDepositQuoteAndShortArgs` method is used to prepare arguments.
+
+```typescript
+import {
+  convertPriceHumanToX96,
+  convertPriceStringToX96,
+  convertPriceX96ToHuman,
+  getCalldata,
+  getDepositBaseAndLongArgs,
+  getDepositQuoteAndShortArgs,
+} from '@equilab/marginly-sdk';
+
+const openPositionTx = useMemo(() => {
+  const limitPrice = basePrice
+    ? direction === 'short'
+      ? basePrice.toNumber() * 0.95
+      : basePrice.toNumber() * 1.05
+    : undefined;
+  if (!limitPrice) return undefined;
+
+  const depositAmount = ethers.utils.parseUnits(inputAmount || '0', depositToken.decimals);
+
+  const positionAmount = ethers.utils.parseUnits(
+    leveragedAmount.toFixed(direction === 'long' ? baseToken.decimals : quoteToken.decimals),
+    baseToken.decimals
+  );
+
+  const limitPriceX96 = convertPriceStringToX96(
+    limitPrice.toString(),
+    BigNumber.from(baseToken.decimals),
+    BigNumber.from(quoteToken.decimals)
+  );
+
+  const openMethod = direction === 'long' ? getDepositBaseAndLongArgs : getDepositQuoteAndShortArgs;
+
+  const args = openMethod(depositAmount, positionAmount, limitPriceX96, ZERO, isNativeToken);
+
+  const { calldata } = getCalldata(args);
+
+  const tx = {
+    from: account,
+    to: POOL_ADDRESS,
+    data: calldata,
+    ...(isNativeToken ? { value: depositAmount } : {}),
+  };
+
+  return tx;
+}, [account, inputAmount, basePrice, positionAmount, leveragedAmount, isNativeToken, isValidAmount]);
+```
+
+### Close position
+
+```typescript
+const closePositionTx = useMemo(() => {
+  const limitPrice = basePrice
+    ? derivedPosition.type === PositionType.Long
+      ? basePrice.toNumber() * 0.95
+      : basePrice.toNumber() * 1.05
+    : undefined;
+
+  if (!limitPrice) return undefined;
+
+  const limitPriceX96 = convertPriceStringToX96(
+    limitPrice.toString(),
+    BigNumber.from(baseToken.decimals),
+    BigNumber.from(quoteToken.decimals)
+  );
+
+  const args = getClosePositionArgs(limitPriceX96, ZERO, isNativeToken);
+
+  const { calldata } = getCalldata(args);
+
+  const tx = {
+    from: account,
+    to: POOL_ADDRESS,
+    data: calldata,
+  };
+
+  return tx;
+}, [derivedPosition, basePrice, baseToken, quoteToken, account, direction]);
+```
+
+### Withdraw all deposit
+
+After closing long/short position you should withdraw deposit
+
+```typescript
+const withdrawAllTx = useMemo(() => {
+  if (!derivedPosition || derivedPosition.type !== PositionType.Lend) return;
+
+  const isWithdrawingBase = derivedPosition.baseAmount.gt(0);
+
+  const args = isWithdrawingBase
+    ? getWithdrawBaseAllArgs(baseToken?.isNative)
+    : getWithdrawQuoteAllArgs(quoteToken?.isNative);
+  const { calldata } = getCalldata(args);
+  const tx = {
+    from: account,
+    to: POOL_ADDRESS,
+    data: calldata,
+  };
+  return tx;
+}, [derivedPosition, baseToken, quoteToken, account]);
 ```
