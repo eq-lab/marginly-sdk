@@ -4,6 +4,7 @@ import { BigNumber, ethers } from 'ethers';
 import { defaultAbiCoder } from 'ethers/lib/utils';
 
 import { EXECUTE_METHOD, EXECUTE_METHOD_ENCODED, SWAP_CALLDATA_DEFAULT, ZERO } from './consts';
+import { convertPriceStringToX96, convertPriceX96ToHuman } from './marginlyPoolMath';
 
 /**
  * Enum with all calls performed via Marginly `execute` method
@@ -32,6 +33,7 @@ export enum CallType {
  * @param BigNumber - `swapCalldata`
  */
 export type ExecuteArgs = [CallType, BigNumber, BigNumber, BigNumber, boolean, string, BigNumber];
+export type ExecuteArgsBigInt = [CallType, bigint, bigint, bigint, boolean, string, bigint];
 
 export const EXECUTE_ARGS_ABI_DEFINITION = ['uint8', 'uint256', 'uint256', 'uint256', 'bool', 'address', 'uint256'];
 
@@ -39,6 +41,11 @@ export interface ExecuteParams {
   methodName: string;
   args: ExecuteArgs;
   value: BigNumber;
+}
+export interface ExecuteParamsBigInt {
+  methodName: string;
+  args: ExecuteArgsBigInt;
+  value: bigint;
 }
 
 /**
@@ -373,4 +380,88 @@ const addFunctionCalldata = (s: string) => EXECUTE_METHOD_ENCODED.concat(s.repla
 
 export function getCalldata(args: ExecuteParams) {
   return { ...args, calldata: addFunctionCalldata(defaultAbiCoder.encode(EXECUTE_ARGS_ABI_DEFINITION, args.args)) };
+}
+
+const isValidAmount = (x: string | undefined) => !!x && Number.isFinite(+x) && +x > 0;
+
+const getLeveragedAmount = (amount: string, direction: 'long' | 'short', leverage: number, basePrice: number) =>
+  direction === 'long' ? +amount * (leverage - 1) : (+amount * (leverage - 1)) / basePrice;
+
+type CommonParams = {
+  direction: 'long' | 'short';
+  slippageTolerancePercentage: number;
+  basePriceX96: bigint;
+  baseDecimals: number;
+  quoteDecimals: number;
+  isDepositingNativeToken: boolean;
+  swapCalldata: bigint;
+};
+
+export function getActionArgs(
+  props:
+    | ({
+        type: 'depositAndOpenPosition';
+        depositAmount: string;
+        leverage: number;
+      } & CommonParams)
+    | ({
+        type: 'close';
+      } & CommonParams)
+): ExecuteParamsBigInt | undefined {
+  const {
+    type,
+    direction,
+    slippageTolerancePercentage,
+    basePriceX96,
+    baseDecimals,
+    quoteDecimals,
+    isDepositingNativeToken,
+    swapCalldata,
+  } = props;
+  if (type === 'depositAndOpenPosition' && !isValidAmount(props.depositAmount)) return undefined;
+
+  const basePrice = convertPriceX96ToHuman(
+    BigNumber.from(basePriceX96),
+    BigNumber.from(baseDecimals),
+    BigNumber.from(quoteDecimals)
+  ).toNumber();
+
+  const depositTokenDecimals = direction === 'long' ? baseDecimals : quoteDecimals;
+  const leveragedAmount =
+    type === 'depositAndOpenPosition'
+      ? getLeveragedAmount(props.depositAmount, direction, props.leverage, basePrice)
+      : undefined;
+  const leveragedAmountBn = leveragedAmount
+    ? ethers.utils.parseUnits(leveragedAmount.toFixed(depositTokenDecimals), depositTokenDecimals)
+    : undefined;
+
+  const limitPrice =
+    (type === 'depositAndOpenPosition' && direction === 'short') || (type === 'close' && direction === 'long')
+      ? basePrice * ((100 - slippageTolerancePercentage) / 100)
+      : basePrice * ((100 + slippageTolerancePercentage) / 100);
+
+  const openMethod = direction === 'long' ? getDepositBaseAndLongArgs : getDepositQuoteAndShortArgs;
+
+  const amountBn =
+    type === 'depositAndOpenPosition'
+      ? ethers.utils.parseUnits(props.depositAmount || '0', depositTokenDecimals)
+      : undefined;
+  const limitPriceX96 = convertPriceStringToX96(
+    limitPrice.toString(),
+    BigNumber.from(baseDecimals),
+    BigNumber.from(quoteDecimals)
+  );
+
+  const {
+    methodName,
+    args: [ct, bn1, bn2, bn3, b, s, bn4],
+    value,
+  } = type === 'depositAndOpenPosition' && amountBn && leveragedAmountBn
+    ? openMethod(amountBn, leveragedAmountBn, limitPriceX96, BigNumber.from(swapCalldata), isDepositingNativeToken)
+    : getClosePositionArgs(limitPriceX96, BigNumber.from(swapCalldata), isDepositingNativeToken);
+  return {
+    methodName,
+    args: [ct, bn1.toBigInt(), bn2.toBigInt(), bn3.toBigInt(), b, s, bn4.toBigInt()],
+    value: value.toBigInt(),
+  };
 }
