@@ -5,6 +5,7 @@ import { defaultAbiCoder } from 'ethers/lib/utils';
 
 import { EXECUTE_METHOD, EXECUTE_METHOD_ENCODED, SWAP_CALLDATA_DEFAULT, ZERO } from './consts';
 import { convertPriceStringToX96, convertPriceX96ToHuman } from './marginlyPoolMath';
+import { MarginlyPosition, PositionType } from '.';
 
 /**
  * Enum with all calls performed via Marginly `execute` method
@@ -397,6 +398,18 @@ type CommonParams = {
   swapCalldata: bigint;
 };
 
+export function castParamsToBigInt({
+  methodName,
+  args: [ct, bn1, bn2, bn3, b, s, bn4],
+  value,
+}: ExecuteParams): ExecuteParamsBigInt {
+  return {
+    methodName,
+    args: [ct, bn1.toBigInt(), bn2.toBigInt(), bn3.toBigInt(), b, s, bn4.toBigInt()],
+    value: value.toBigInt(),
+  };
+}
+
 export function getActionArgs(
   props:
     | ({
@@ -452,16 +465,21 @@ export function getActionArgs(
     BigNumber.from(quoteDecimals)
   );
 
-  const {
-    methodName,
-    args: [ct, bn1, bn2, bn3, b, s, bn4],
-    value,
-  } = type === 'depositAndOpenPosition' && amountBn && leveragedAmountBn
-    ? openMethod(amountBn, leveragedAmountBn, limitPriceX96, BigNumber.from(swapCalldata), isDepositingNativeToken)
-    : getClosePositionArgs(limitPriceX96, BigNumber.from(swapCalldata), isDepositingNativeToken);
-  return {
-    methodName,
-    args: [ct, bn1.toBigInt(), bn2.toBigInt(), bn3.toBigInt(), b, s, bn4.toBigInt()],
-    value: value.toBigInt(),
-  };
+  const params =
+    type === 'depositAndOpenPosition' && amountBn && leveragedAmountBn
+      ? openMethod(amountBn, leveragedAmountBn, limitPriceX96, BigNumber.from(swapCalldata), isDepositingNativeToken)
+      : getClosePositionArgs(limitPriceX96, BigNumber.from(swapCalldata), isDepositingNativeToken);
+  return castParamsToBigInt(params);
+}
+
+export function getWithdrawAllArgs(
+  pos: MarginlyPosition | undefined,
+  isBaseNative: boolean,
+  isQuoteNative: boolean
+): ExecuteParamsBigInt | undefined {
+  if (!pos || pos.type !== PositionType.Lend) return undefined;
+
+  const isWithdrawingBase = pos.baseAmount.gt(0);
+  const params = isWithdrawingBase ? getWithdrawBaseAllArgs(isBaseNative) : getWithdrawQuoteAllArgs(isQuoteNative);
+  return castParamsToBigInt(params);
 }
