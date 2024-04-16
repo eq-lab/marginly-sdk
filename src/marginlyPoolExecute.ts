@@ -5,7 +5,7 @@ import { defaultAbiCoder } from 'ethers/lib/utils';
 
 import { EXECUTE_METHOD, EXECUTE_METHOD_ENCODED, SWAP_CALLDATA_DEFAULT, ZERO } from './consts';
 import { convertPriceStringToX96, convertPriceX96ToHuman } from './marginlyPoolMath';
-import { MarginlyPosition, PositionType } from './marginlyPosition';
+import { MarginlyPosition, MarginlyPositionBigInt, PositionType } from './marginlyPosition';
 
 /**
  * Enum with all calls performed via Marginly `execute` method
@@ -473,13 +473,13 @@ export function getActionArgs(
 }
 
 export function getWithdrawAllArgs(
-  pos: MarginlyPosition | undefined,
+  pos: MarginlyPositionBigInt | undefined,
   isBaseNative: boolean,
   isQuoteNative: boolean
 ): ExecuteParamsBigInt | undefined {
   if (!pos || pos.type !== PositionType.Lend) return undefined;
 
-  const isWithdrawingBase = pos.baseAmount.gt(0);
+  const isWithdrawingBase = pos.baseAmount > 0;
   const params = isWithdrawingBase ? getWithdrawBaseAllArgs(isBaseNative) : getWithdrawQuoteAllArgs(isQuoteNative);
   return castParamsToBigInt(params);
 }
