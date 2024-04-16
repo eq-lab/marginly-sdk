@@ -445,7 +445,7 @@ export function getActionArgs(
       ? getLeveragedAmount(props.depositAmount, direction, props.leverage, basePrice)
       : undefined;
   const leveragedAmountBn = leveragedAmount
-    ? ethers.utils.parseUnits(leveragedAmount.toFixed(depositTokenDecimals), depositTokenDecimals)
+    ? ethers.utils.parseUnits(leveragedAmount.toFixed(baseDecimals), baseDecimals)
     : undefined;
 
   const limitPrice =
