@@ -16,6 +16,15 @@ export interface MarginlyCoeffs {
   quoteDebtCoeff: BigNumber;
 }
 
+export interface MarginlyCoeffsBigInt {
+  baseCollateralCoeff: bigint;
+  quoteCollateralCoeff: bigint;
+  baseDelevCoeff: bigint;
+  quoteDelevCoeff: bigint;
+  baseDebtCoeff: bigint;
+  quoteDebtCoeff: bigint;
+}
+
 /** @returns multiplication result with at least one of the multipliers in X96 format */
 export function mulFP96(multiplier: BigNumber, multiplicand: BigNumber): BigNumber {
   return multiplier.mul(multiplicand).div(FP96_ONE);

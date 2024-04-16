@@ -9,6 +9,7 @@ import {
   calcShortLeverage,
   calcShortLiquidationPriceX96,
   MarginlyCoeffs,
+  MarginlyCoeffsBigInt,
   mulFP96,
 } from './marginlyPoolMath';
 import { FP96_ONE } from './consts';
@@ -102,11 +103,7 @@ export class MarginlyPosition {
       return this.baseAmount;
     } else if (this.type == PositionType.Long) {
       return this.baseAmount.sub(
-        this.quoteAmount
-          .mul(maxLeverage)
-          .mul(FP96_ONE)
-          .div(basePriceX96)
-          .div(maxLeverage.sub(1))
+        this.quoteAmount.mul(maxLeverage).mul(FP96_ONE).div(basePriceX96).div(maxLeverage.sub(1))
       );
     } else {
       return BigNumber.from(0);
@@ -121,14 +118,45 @@ export class MarginlyPosition {
       return this.quoteAmount;
     } else if (this.type == PositionType.Short) {
       return this.quoteAmount.sub(
-        this.baseAmount
-          .mul(maxLeverage)
-          .mul(basePriceX96)
-          .div(FP96_ONE)
-          .div(maxLeverage.sub(1))
+        this.baseAmount.mul(maxLeverage).mul(basePriceX96).div(FP96_ONE).div(maxLeverage.sub(1))
       );
     } else {
       return BigNumber.from(0);
     }
+  }
+}
+
+export class MarginlyPositionBigInt {
+  /** @field position type */
+  public type: PositionType;
+
+  /** @field absolute value of position base tokens amount */
+  public baseAmount: bigint;
+
+  /** @field absolute value of position quote tokens amount */
+  public quoteAmount: bigint;
+  constructor(
+    coeffs: MarginlyCoeffsBigInt,
+    type: PositionType,
+    discountedBaseAmount: bigint,
+    discountedQuoteAmount: bigint
+  ) {
+    const position = new MarginlyPosition(
+      {
+        baseCollateralCoeff: BigNumber.from(coeffs.baseCollateralCoeff),
+        quoteCollateralCoeff: BigNumber.from(coeffs.quoteCollateralCoeff),
+        baseDebtCoeff: BigNumber.from(coeffs.baseDebtCoeff),
+        quoteDebtCoeff: BigNumber.from(coeffs.quoteDebtCoeff),
+        baseDelevCoeff: BigNumber.from(coeffs.baseDelevCoeff),
+        quoteDelevCoeff: BigNumber.from(coeffs.quoteDelevCoeff),
+      },
+      type,
+      BigNumber.from(discountedBaseAmount),
+      BigNumber.from(discountedQuoteAmount)
+    );
+
+    this.type = position.type;
+    this.baseAmount = position.baseAmount.toBigInt();
+    this.quoteAmount = position.quoteAmount.toBigInt();
   }
 }

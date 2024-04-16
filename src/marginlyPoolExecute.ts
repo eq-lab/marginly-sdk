@@ -5,7 +5,7 @@ import { defaultAbiCoder } from 'ethers/lib/utils';
 
 import { EXECUTE_METHOD, EXECUTE_METHOD_ENCODED, SWAP_CALLDATA_DEFAULT, ZERO } from './consts';
 import { convertPriceStringToX96, convertPriceX96ToHuman } from './marginlyPoolMath';
-import { MarginlyPosition, PositionType } from '.';
+import { MarginlyPosition, PositionType } from './marginlyPosition';
 
 /**
  * Enum with all calls performed via Marginly `execute` method
@@ -33,8 +33,8 @@ export enum CallType {
  * @param string - `receivePositionAddress`
  * @param BigNumber - `swapCalldata`
  */
-export type ExecuteArgs = [CallType, BigNumber, BigNumber, BigNumber, boolean, string, BigNumber];
-export type ExecuteArgsBigInt = [CallType, bigint, bigint, bigint, boolean, string, bigint];
+export type ExecuteArgs = [CallType, BigNumber, BigNumber, BigNumber, boolean, `0x${string}`, BigNumber];
+export type ExecuteArgsBigInt = [CallType, bigint, bigint, bigint, boolean, `0x${string}`, bigint];
 
 export const EXECUTE_ARGS_ABI_DEFINITION = ['uint8', 'uint256', 'uint256', 'uint256', 'bool', 'address', 'uint256'];
 
@@ -338,7 +338,7 @@ export function getReinitWithBalanceSyncArgs(): ExecuteParams {
  * @returns method and parameters for Marginly `receive position` call.
  */
 export function getReceivePositionArgs(
-  positionAddress: string,
+  positionAddress: `0x${string}`,
   depositAmountBase: BigNumber,
   depositAmountQuote: BigNumber
 ): ExecuteParams {
@@ -445,7 +445,7 @@ export function getActionArgs(
       ? getLeveragedAmount(props.depositAmount, direction, props.leverage, basePrice)
       : undefined;
   const leveragedAmountBn = leveragedAmount
-    ? ethers.utils.parseUnits(leveragedAmount.toFixed(depositTokenDecimals), depositTokenDecimals)
+    ? ethers.utils.parseUnits(leveragedAmount.toFixed(baseDecimals), baseDecimals)
     : undefined;
 
   const limitPrice =
